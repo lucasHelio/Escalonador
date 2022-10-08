@@ -19,6 +19,7 @@ int ProcessExe = MAXPROCESSES;           //Processos a serem executados
 //Estrutura do Processo
 typedef struct reg
 {
+    int tempoExecutando; //tempo que o processo ficou executando
     int tempoChegada;   //momento que o processo chega na fila
     char status[10];    //status
     int pid;            //process identification
@@ -44,7 +45,7 @@ typedef struct {
 void inserirInicio(Lista *lista, Processo *processo) {
     No *novo = (No*)malloc(sizeof(No)); // cria um novo nó
     novo->processo = processo;// (*novo).valor = valor
-    strcpy(novo->processo->status, STATUS_STRING[1]/*EXECUTANDO*/);
+    strcpy(novo->processo->status, STATUS_STRING[0]/*EXECUTANDO*/);
 
     if(lista->inicio == NULL) { // a lista está vazia
         novo->proximo = NULL;
@@ -54,7 +55,7 @@ void inserirInicio(Lista *lista, Processo *processo) {
          //novo->proximo = lista->inicio; //consertar
          //lista->fim = novo;
          //if(novo == lista->fim)
-         if(strcmp(lista->inicio->processo->status, STATUS_STRING[3]/*CONCLUIDO*/) != 0){
+         if(strcmp(lista->inicio->processo->status, STATUS_STRING[2]/*CONCLUIDO*/) != 0){
             lista->fim = lista->inicio;
             lista->fim->proximo = NULL;
             return;
@@ -62,9 +63,10 @@ void inserirInicio(Lista *lista, Processo *processo) {
          if(novo->processo == NULL){//não faz nada
             return;//continue;//return?
          }
+         novo->processo->tempoExecutando=0;
          //ter atenção aqui
          lista->inicio = novo;
-         strcpy(lista->inicio->processo->status, STATUS_STRING[1]);
+         strcpy(lista->inicio->processo->status, STATUS_STRING[0]/*EXECUTANDO*/);
      }
     lista->tam++;
 }
@@ -77,24 +79,25 @@ void inserirFim(Lista *lista, Processo *processo) {
     
 
     if(lista->inicio == NULL) { // lista vazia
-        strcpy(novo->processo->status, STATUS_STRING[1]/*EXECUTANDO*/);
+        strcpy(novo->processo->status, STATUS_STRING[0]/*EXECUTANDO*/);
         lista->inicio = novo;
         lista->fim = novo;
     } else { // lista não vazia
-        strcpy(novo->processo->status, STATUS_STRING[2]/*ESPERA*/);
+        strcpy(novo->processo->status, STATUS_STRING[1]/*ESPERA*/);
         lista->fim->proximo = novo;
         lista->fim = novo;
+        
     }
     lista->tam++;
 }
 
 
-void processoConcluido(Processo *p, Processo **ListaConcluidos){ //talves não esteja alterando P
-    strcpy(p->status, "concluido");
-    ListaConcluidos[MAXPROCESSES - ProcessExe]->pid = p->pid;
-    ListaConcluidos[MAXPROCESSES - ProcessExe]->tempoChegada = p->tempoChegada;
-    strcpy(ListaConcluidos[MAXPROCESSES - ProcessExe]->status, p->status);
-    ListaConcluidos[MAXPROCESSES - ProcessExe]->tp = p->tp;
+void processoConcluido(Processo *p, Processo *ListaConcluidos){ //talves não esteja alterando P
+    strcpy(p->status, STATUS_STRING[2]);
+    ListaConcluidos[MAXPROCESSES - ProcessExe].pid = p->pid;
+    ListaConcluidos[MAXPROCESSES - ProcessExe].tempoChegada = p->tempoChegada;
+    strcpy(ListaConcluidos[MAXPROCESSES - ProcessExe].status, p->status);
+    ListaConcluidos[MAXPROCESSES - ProcessExe].tp = p->tp;
     ProcessExe--;
 }
 
@@ -120,11 +123,12 @@ void createProcesses (Processo **P) {
 }
 
 //Escalonador Round-Robin (TODO: com feedback)
-int Escalonador(Processo **P, Processo **ListaConcluidos){
+int Escalonador(Processo **P, Processo *ListaConcluidos){
     int t = 0;
     // TODO: alocar lista encadeada
     Lista *listaP = (Lista *) malloc(sizeof(Lista));      //alocação da lista
     listaP->inicio = NULL;
+    
     while(ProcessExe){
         // 1 -checar se alguém chegou na fila (algum processo foi iniciado)
         for (int i=0; i<MAXPROCESSES; i++) {
@@ -137,9 +141,9 @@ int Escalonador(Processo **P, Processo **ListaConcluidos){
             
         }
 
-
+        //TODO: PENSAR EM COMO FAZER A CHECAGEM COM O PONTEIRO = NULL
         // 2- ve se o processo atual já terminou ou atingiu o quantum
-        if((t % QUANTUM == 0 && t != 0)|| (listaP->inicio->processo->tp <=0)&& listaP->inicio!=NULL){//passou o tempo de ciclo
+        if((listaP->inicio->processo->tempoExecutando == QUANTUM /*|| (listaP->inicio->processo->tp==0 && listaP->inicio!=NULL)*/)/*|| (listaP->inicio->processo->tp <=0)&& listaP->inicio!=NULL*/){//passou o tempo de ciclo
             if(listaP->inicio->processo->tp <=0){ //processo concluido
                 processoConcluido(listaP->inicio->processo, ListaConcluidos);
             }
@@ -156,8 +160,10 @@ int Escalonador(Processo **P, Processo **ListaConcluidos){
         // 3 - processo atual vai pra fila, se conclui ou continua em execucao
         // 4 - se processo atual foi pra fila pega o outro
         //strcpy(listaP->inicio->processo->status,"executando");
-        listaP->inicio->processo->tp--; //diminui 1 do tempo do processo        
-
+        if(listaP->inicio!=NULL){
+            listaP->inicio->processo->tp--; //diminui 1 do tempo do processo
+            listaP->inicio->processo->tempoExecutando++;
+        }
 
         t++;
     }
@@ -193,7 +199,7 @@ int main(){
     int fila[MAXPROCESSES];
 
     //Processo ListaConcluidos[MAXPROCESSES];
-    Processo **ListaConcluidos = malloc(sizeof(Processo*) * MAXPROCESSES);
+    Processo ListaConcluidos[MAXPROCESSES];
 
     Processo **processes = malloc(sizeof(Processo*) * MAXPROCESSES);
 
