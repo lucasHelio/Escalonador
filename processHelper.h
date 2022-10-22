@@ -9,6 +9,7 @@
 #define PRINTERTIME 4
 
 
+
 typedef enum {
   WAITING, READY, RUNNING, BLOCKED, FINISHED
 } STATUS;
@@ -35,6 +36,9 @@ typedef struct Process
     InOut pIo;
     struct Process *next;     //proximo processo na fila
 }Process;
+
+Process *BLOQUEADOS[MAXPROCESSES];
+
 
 void changeStatus(Process *process, STATUS status){
     process->status = status;
@@ -79,7 +83,7 @@ void deleteHead(struct Process** last) {
 
   changeStatus((*last)->next, FINISHED);
 
-  // checa se a lista tem apenas
+  // checa se a lista tem apenas um elemento
   if ((*last)->next == *last) {
     free(*last);
     *last = NULL;
@@ -92,6 +96,42 @@ void deleteHead(struct Process** last) {
   (*last)->next = d->next;
   free(d);
 
+}
+
+
+// tira o processo da lista encadeada e coloca ele na lista de bloqueados.
+void blockHead(struct Process** last){
+   // checa se a lista esta vazia, ou seja não tem nada a ser deletado
+  if (*last == NULL) return;
+
+  changeStatus((*last)->next, BLOCKED);
+
+  // COLOCANDO O PROCESSO NA LISTA DE BLOQUEADOS
+  BLOQUEADOS[(*last)->next->pId] = ((*last)->next);
+
+
+
+  // checa se a lista tem apenas um elemento
+  if ((*last)->next == *last) {
+    free(*last);
+    *last = NULL;
+    return;
+  }
+
+  struct Process *d;
+
+  d = (*last)->next;
+  (*last)->next = d->next;
+  free(d);
+}
+
+void unblockHead(Process **last ,int pid){
+   (*last)  = insertAtEnd( (*last), BLOQUEADOS[pid]); 
+
+   //tirar de bloqueados
+   BLOQUEADOS[pid] = NULL;
+
+   return;
 }
 
 
@@ -136,8 +176,8 @@ void createProcesses (Process **pList) {
         
         
         // ultimo/primeiro instante para o I/O assumir o controle
-        int upper = process->pArrivalTime + process->pExecTime;
-        int lower = process->pArrivalTime;
+        int upper = process->pArrivalTime + process->pExecTime;     //ultimo instante
+        int lower = process->pArrivalTime;                          //primeiro instante
 
 
         // sorteio do momento em que o I/O do processo assumirá o controle. 
