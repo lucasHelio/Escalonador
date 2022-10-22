@@ -51,11 +51,11 @@ struct Process* insertAtEnd(Process * last, Process* newProcess) {
   if (last == NULL) {
     last = newProcess;
     newProcess -> next = last;
-    changeStatus(newProcess, RUNNING);
+    //changeStatus(newProcess, RUNNING);
     return last;
   }
 
-  changeStatus(newProcess, WAITING);
+  //changeStatus(newProcess, WAITING);
 
   // novo processo aponta para a cabeca da lista já que ele agora será o ultimo
   newProcess->next = last->next;
@@ -72,7 +72,7 @@ struct Process* insertAtEnd(Process * last, Process* newProcess) {
 }
 
 void changeHead(struct Process** last) {
-  changeStatus((*last)->next, WAITING);
+  changeStatus((*last)->next, READY);
   // faz a cabeca ser o ultimo processo
   *last = (*last)->next;
   changeStatus((*last)->next, RUNNING);
@@ -178,13 +178,26 @@ void createProcesses (Process **pList) {
     }
 }
 
-void unblockHead(Process **last ,int pid){
-  changeStatus(blockedList[pid], WAITING);
-  //blockedList[pid]->pId=pid;
-  (*last)  = insertAtEnd( (*last), blockedList[pid]); 
+void traverseBlockedList() {
+  printf("BLOQUADOS - ");
+  for (int i = 0; i<MAXPROCESSES; i++) {
+    if ((blockedList)[i] == NULL){
+      printf("PID: NULL ");
+    }
+    else {
+      printf("PID: %d ", (blockedList)[i]->pId);
+    }
+    
+  }
+  printf("\n");
+}
 
-  //tirar de bloqueados
-  blockedList[pid] = NULL;
+void unblockHead(Process **last ,int pid){
+  //changeStatus(blockedList[pid], WAITING);
+  
+  (*last)  = insertAtEnd( (*last), blockedList[pid]); //coloca o processo no final da lista
+  blockedList[pid] = NULL; //tirar de bloqueados
+  traverseBlockedList();
 
   return;
 }
@@ -194,6 +207,7 @@ void blockProcess(struct Process** last){
   printf("Processo %d entrou na lista de bloqueados por causa de um IO.\n", (*last)->next->pId);
   blockedList[(*last)->next->pId] = (*last)->next;
   removeHead(last);
+  traverseBlockedList();
 }
 
 void decrementBlockedProcesses () {
@@ -206,15 +220,36 @@ void decrementBlockedProcesses () {
 }
 
 
-void checkBlockedProcesses (struct Process** last) {
-    for (int i = 0; i<MAXPROCESSES; i++) {
-        printf("PROCESSO: %p \n", (blockedList)[i]);
-    }
-
+void checkBlockedProcesses (struct Process** lastLowPriority, struct Process** lastHighPriority) {
   for (int i = 0; i<MAXPROCESSES; i++) {
     if(blockedList[i] != NULL && blockedList[i]->pIo.ioExecTime == 0) {
-      unblockHead(last, i);
-      
+      switch (blockedList[i]->pIo.ioType){
+        case DISC:
+          if (lastHighPriority == NULL && lastLowPriority == NULL) {
+            unblockHead(lastLowPriority, i);
+            changeStatus(*lastLowPriority, RUNNING);
+          }
+          else {
+            unblockHead(lastLowPriority, i);
+            changeStatus(*lastLowPriority, READY);//TALVEZ ENTRE AQ POR ENGANO?
+          }
+          
+          break;
+        case TAPE:
+        case PRINTER:
+          if(lastHighPriority == NULL){
+            unblockHead(lastHighPriority, i);
+            changeStatus(*lastHighPriority, RUNNING);
+          }
+          else {
+            unblockHead(lastHighPriority, i);
+            changeStatus(*lastHighPriority, READY);
+          }
+          break;
+        default:
+        break;
+      }
+   
     }
   }
 }
