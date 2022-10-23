@@ -179,7 +179,7 @@ void createProcesses (Process **pList) {
 }
 
 void traverseBlockedList() {
-  printf("BLOQUADOS - ");
+  printf("BLOQUEADOS - ");
   for (int i = 0; i<MAXPROCESSES; i++) {
     if ((blockedList)[i] == NULL){
       printf("PID: NULL ");
@@ -206,7 +206,12 @@ void blockProcess(struct Process** last){
   //changeStatus((*last)->next, BLOCKED);
   printf("Processo %d entrou na lista de bloqueados por causa de um IO.\n", (*last)->next->pId);
   blockedList[(*last)->next->pId] = (*last)->next;
+  
+  
   removeHead(last);
+  if((*last) != NULL){
+    changeStatus((*last)->next, RUNNING);
+  }
   traverseBlockedList();
 }
 
@@ -231,7 +236,7 @@ void checkBlockedProcesses (struct Process** lastLowPriority, struct Process** l
           }
           else {
             unblockHead(lastLowPriority, i);
-            changeStatus(*lastLowPriority, READY);//TALVEZ ENTRE AQ POR ENGANO?
+            changeStatus(*lastLowPriority, READY);
           }
           
           break;
@@ -255,7 +260,7 @@ void checkBlockedProcesses (struct Process** lastLowPriority, struct Process** l
 }
 
 
-
+// imprime a lista de espera atualizada
 void traverse(struct Process* last) {
   struct Process* p;
 
