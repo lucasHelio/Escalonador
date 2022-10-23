@@ -115,6 +115,7 @@ void deleteHead(struct Process** last) {
 
   d = (*last)->next;
   (*last)->next = d->next;
+  changeStatus((*last)->next, RUNNING);
   free(d);
 
 }
