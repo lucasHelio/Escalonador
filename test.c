@@ -24,14 +24,14 @@ int Escalonador(Process **P){
 
   printf("%d\n", t);
   while(ProcessExe){
-    //problema no delete HEAD abaixo.
+    
     if(lastHighPriority != NULL){
       if((lastHighPriority->next->pRemainingTime == 0)) { // 
         printf("Processo %d acabou.\n", lastHighPriority->next->pId);
         // deleta da lista de espera o processo que acabou de terminar
         deleteHead(&lastHighPriority); // INFO QUE VAI FALTAR NO FINAL
-        //estamos deletando a cabeça e não mudamos a next para running
         
+        printf("HIGH - ");
         traverse(lastHighPriority);
         // decrementa o total de processos a serem concluidos
         ProcessExe--;
@@ -45,7 +45,7 @@ int Escalonador(Process **P){
         printf("Processo %d acabou.\n", lastLowPriority->next->pId);
         // deleta da lista de espera o processo que acabou de terminar
         deleteHead(&lastLowPriority);
-        
+        printf("LOW - ");
         traverse(lastLowPriority);
         // decrementa o total de processos a serem concluidos
         ProcessExe--;
@@ -69,6 +69,7 @@ int Escalonador(Process **P){
         }
 
         // imprime a lista de espera atualizada
+        printf("HIGH - ");
         traverse(lastHighPriority);
         printf("Processo %d entrou na lista de alta prioridade.\n", P[i]->pId);
         // imprime info do processo que acabou de chegar
@@ -76,12 +77,10 @@ int Escalonador(Process **P){
       } 
     }
 
-    decrementBlockedProcesses();
-
     // checar se há processos bloqueados
     checkBlockedProcesses(&lastLowPriority, &lastHighPriority); // n sei se é dps da checagem de quantum
 
-    
+    decrementBlockedProcesses();
 
     // checa se o processo High Priority em execução terminou
     if(lastHighPriority != NULL){
@@ -89,8 +88,11 @@ int Escalonador(Process **P){
       if(t_quantum == QUANTUM) {
         printf("Processo %d voltou pra espera.\n", lastHighPriority->next->pId);
         // move o processo para o final da fila de espera
-        changeHead(&lastHighPriority);
+        changePriority(&lastHighPriority, &lastLowPriority);
+        printf("HIGH - ");
         traverse(lastHighPriority);
+        printf("LOW - ");
+        traverse(lastLowPriority);
         // reinicia o quantum para o novo processo que entrará em execução
         t_quantum = 0;
         
@@ -108,6 +110,7 @@ int Escalonador(Process **P){
         printf("Processo %d voltou pra espera.\n", lastLowPriority->next->pId);
         // move o processo para o final da fila de espera
         changeHead(&lastLowPriority);
+        printf("LOW - ");
         traverse(lastLowPriority);
         // reinicia o quantum para o novo processo que entrará em execução
         t_quantum = 0;
@@ -137,7 +140,7 @@ int Escalonador(Process **P){
       // checa se algum IO chegou (foi pedido algum IO)
       if(lastHighPriority->next->pIo.ioArrivalTime == (lastHighPriority->next->pExecTime - lastHighPriority->next->pRemainingTime)) {
         blockProcess(&lastHighPriority);
-        
+        printf("HIGH - ");
         traverse(lastHighPriority);
         // reinicia o quantum para o novo processo que entrará em execução
         t_quantum = 0;
@@ -153,9 +156,9 @@ int Escalonador(Process **P){
       printf("Processo %d diminuiu para %d.\n", lastLowPriority->next->pId, lastLowPriority->next->pRemainingTime);
 
       // checa se algum IO chegou (foi pedido algum IO)
-      if(lastLowPriority->next->pIo.ioArrivalTime == (lastLowPriority->next->pExecTime - lastLowPriority->next->pRemainingTime +1)) {
+      if(lastLowPriority->next->pIo.ioArrivalTime == (lastLowPriority->next->pExecTime - lastLowPriority->next->pRemainingTime)) {
         blockProcess(&lastLowPriority);
-        
+        printf("LOW - ");
         traverse(lastLowPriority);
         // reinicia o quantum para o novo processo que entrará em execução
         t_quantum = 0;

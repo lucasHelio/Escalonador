@@ -81,7 +81,6 @@ void changeHead(struct Process** last) {
 void removeHead(struct Process** last){
   if (*last == NULL) return;
 
-  changeStatus((*last)->next, BLOCKED);
 
   // checa se a lista tem apenas
   if ((*last)->next == *last) {
@@ -208,12 +207,38 @@ void blockProcess(struct Process** last){
   printf("Processo %d entrou na lista de bloqueados por causa de um IO.\n", (*last)->next->pId);
   blockedList[(*last)->next->pId] = (*last)->next;
   
-  
+  changeStatus((*last)->next, BLOCKED);
   removeHead(last);
   if((*last) != NULL){
     changeStatus((*last)->next, RUNNING);
   }
   traverseBlockedList();
+}
+
+void changePriority (struct Process** fromListLast, struct Process** toListLast) {
+  struct Process * fromStart = (*fromListLast)->next;
+
+
+  if((*fromListLast)->next != (*fromListLast)){
+    (*fromListLast)->next = fromStart->next;  // faz o prox elem de high ser a cabeça
+    
+  }
+  else{
+    (*fromListLast) = NULL;
+  }
+  
+
+  (*toListLast) = insertAtEnd((*toListLast), fromStart);
+
+  if((*fromListLast) != NULL){
+    changeStatus((*toListLast), READY);
+    changeStatus((*fromListLast)->next, RUNNING);
+  }
+  else if((*toListLast) == (*toListLast)->next){
+    changeStatus((*toListLast)->next, RUNNING);
+  }
+  else
+  changeStatus((*toListLast), READY);
 }
 
 void decrementBlockedProcesses () {
