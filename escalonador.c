@@ -25,32 +25,34 @@ int Escalonador(Process **P){
   printf("%d\n", t);
   while(ProcessExe){
     
+    //checa se o processo de alta prioridade executado já terminou seu tempo restante
     if(lastHighPriority != NULL){
       if((lastHighPriority->next->pRemainingTime == 0)) { // 
         printf("Processo %d acabou.\n", lastHighPriority->next->pId);
-        // deleta da lista de espera o processo que acabou de terminar
-        deleteHead(&lastHighPriority); // INFO QUE VAI FALTAR NO FINAL
+        deleteHead(&lastHighPriority); // deleta da lista de espera o processo que acabou de terminar
         
+        // printa a lista de alta prioridade
         printf("HIGH - ");
         traverse(lastHighPriority);
-        // decrementa o total de processos a serem concluidos
-        ProcessExe--;
-        // reinicia o quantum para o novo processo que entrará em execução
-        t_quantum = 0;
+        
+        ProcessExe--; // decrementa o total de processos a serem concluidos
+        
+        t_quantum = 0;  // reinicia o quantum para o novo processo que entrará em execução
       }
     }
+    //checa se o processo de baixa prioridade executado já terminou seu tempo restante
     if(lastLowPriority != NULL) {
       // checa se o processo em execução terminou
       if((lastLowPriority->next->pRemainingTime == 0)) {
         printf("Processo %d acabou.\n", lastLowPriority->next->pId);
-        // deleta da lista de espera o processo que acabou de terminar
-        deleteHead(&lastLowPriority);
+        deleteHead(&lastLowPriority); // deleta da lista de espera o processo que acabou de terminar
+
+        // printa a lista de baixa prioridade
         printf("LOW - ");
         traverse(lastLowPriority);
-        // decrementa o total de processos a serem concluidos
-        ProcessExe--;
-        // reinicia o quantum para o novo processo que entrará em execução
-        t_quantum = 0;
+        
+        ProcessExe--; // decrementa o total de processos a serem concluidos
+        t_quantum = 0;  // reinicia o quantum para o novo processo que entrará em execução
       }
     }
 
@@ -77,9 +79,10 @@ int Escalonador(Process **P){
       } 
     }
 
-    // checar se há processos bloqueados
+    // checar se há processos bloqueados e se eles precisam ser desbloqueados
     checkBlockedProcesses(&lastLowPriority, &lastHighPriority); // n sei se é dps da checagem de quantum
-
+    
+    // decrementa processos bloqueados
     decrementBlockedProcesses();
 
     // checa se o processo High Priority em execução terminou
@@ -93,13 +96,10 @@ int Escalonador(Process **P){
         traverse(lastHighPriority);
         printf("LOW - ");
         traverse(lastLowPriority);
-        // reinicia o quantum para o novo processo que entrará em execução
-        t_quantum = 0;
+        t_quantum = 0;        // reinicia o quantum para o novo processo que entrará em execução
         
       }
-      else
-      // incrementa o tempo do quantum do processo em execução
-
+      else  // incrementa o tempo do quantum do processo em execução
       t_quantum++;
     }
 
@@ -120,16 +120,11 @@ int Escalonador(Process **P){
 
       t_quantum++;
     }
-
-
     
 
-
-    
-
-    
-    
+    // incrementa o contador de tempo e printa ele na tela
     printf("%d\n", ++t);
+
 
     // checagem de alta prioridade 
     if(lastHighPriority != NULL && lastHighPriority->next->status == RUNNING) {
@@ -147,11 +142,9 @@ int Escalonador(Process **P){
       }
     }
 
-
-
     // checagem de baixa prioridade
     else if(lastLowPriority != NULL)  {     // diminui o tempo restante de execução do processo atual
-      changeStatus(lastLowPriority ,RUNNING);
+      changeStatus(lastLowPriority->next ,RUNNING);
       (lastLowPriority->next->pRemainingTime)--;
       printf("Processo %d diminuiu para %d.\n", lastLowPriority->next->pId, lastLowPriority->next->pRemainingTime);
 
@@ -164,26 +157,6 @@ int Escalonador(Process **P){
         t_quantum = 0;
       }
     }
-
-    
-    
-
-
-
-    
-
-
-    
-    
-    
-
-
-    // contador para não ir para infinito.
-    if(t>=50){
-      break;
-    }
-
-    // incrementa o tempo geral do escalonador
     
       
   }

@@ -268,7 +268,7 @@ void checkBlockedProcesses (struct Process** lastLowPriority, struct Process** l
           break;
         case TAPE:
         case PRINTER:
-          if(lastHighPriority == NULL){
+          if((*lastHighPriority) == NULL){
             unblockHead(lastHighPriority, i);
             changeStatus(*lastHighPriority, RUNNING);
           }
